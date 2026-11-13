@@ -753,3 +753,187 @@ footer span {
     padding: 16px 0;
   }
 }
+
+/* ── 职业选择 ─────────────────────────────────────────────── */
+.start-screen {
+  display: block;
+  min-height: 100vh;
+}
+.start-main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 64px 36px;
+}
+.start-head h1 {
+  margin: 14px 0 18px;
+}
+.profession-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin: 26px 0;
+}
+.profession-card {
+  text-align: left;
+  padding: 24px;
+  min-height: 300px;
+  background: #1c241a;
+  border-color: #38432f;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.profession-card b {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.9;
+  color: #d6dea5;
+}
+.profession-card small {
+  font-size: 10px;
+  color: #8d9c7a;
+  line-height: 1.8;
+  margin-top: auto;
+}
+.profession-facts {
+  list-style: none;
+  margin: 0;
+  padding: 14px 0;
+  border-top: 1px solid #333e2b;
+  border-bottom: 1px solid #333e2b;
+  display: grid;
+  gap: 8px;
+}
+.profession-facts li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #8b9c78;
+}
+.profession-facts em {
+  font-style: normal;
+  color: #c8d294;
+}
+.profession-card.selected {
+  border-color: #d5dc97;
+  background: #33402a;
+  box-shadow: 0 0 22px #b9cc6c18;
+}
+.start-button {
+  width: 100%;
+  padding: 18px;
+  font-size: 14px;
+  letter-spacing: 1px;
+  background: #3d4b2d;
+  border-color: #97a866;
+  color: #e4e9bd;
+}
+.start-note {
+  text-align: center;
+  margin-top: 18px;
+}
+
+/* ── 头部资源自适应 ───────────────────────────────────────── */
+.resources {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+@media (max-width: 1280px) {
+  .resources {
+    gap: 14px;
+  }
+  .resources div {
+    padding-left: 14px;
+  }
+  .resources b {
+    font-size: 20px;
+  }
+}
+
+/* ── 职业信息 ─────────────────────────────────────────────── */
+.profession-line {
+  font-size: 11px;
+  color: #c0cc8c;
+  margin: 4px 0 10px;
+}
+.profession-value {
+  font-size: 17px !important;
+}
+.resource-value {
+  color: #d9c38d;
+}
+.resource-chip {
+  color: #d9c38d;
+  font-size: 12px;
+}
+
+/* ── 牌组：收藏 / 出战 / 切换 ───────────────────────────────── */
+.subhead {
+  font-size: 13px;
+  font-weight: 500;
+  color: #b7c58c;
+  margin: 24px 0 10px;
+  letter-spacing: 1px;
+}
+.collection-list {
+  max-height: 300px;
+}
+.collection-card.foreign {
+  opacity: 0.62;
+  border-style: dashed;
+  border-color: #6b5d48;
+}
+.collection-card .tag {
+  display: inline-block;
+  font-style: normal;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #9aa77f;
+  border: 1px solid #4c5a3d;
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.locked-note {
+  color: #c59c78 !important;
+}
+.ready-note {
+  color: #a9c28a !important;
+}
+.switch-camp {
+  background: #2d2a1f;
+  border-color: #7b6a3f;
+}
+.switch-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+.deck-preview {
+  border: 1px dashed #8a7a4e;
+  padding: 12px;
+  font-size: 11px;
+  color: #d6cd9a;
+  display: grid;
+  gap: 6px;
+}
+.deck-preview small {
+  color: #a49a76;
+}
+.route-node.trial {
+  border-color: #6d5f3e;
+}
+.route-node.locked {
+  opacity: 0.35;
+  border-style: dashed;
+}
+@media (max-width: 900px) {
+  .profession-grid {
+    grid-template-columns: 1fr;
+  }
+  .profession-card {
+    min-height: 0;
+  }
+}

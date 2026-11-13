@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { battleState, currentIntent } from "../model/state";
 import { cards } from "@/shared/cards";
+import { professionNames, professionResources } from "@/shared/domain";
+import { professions } from "@/shared/professions";
+import { deckState } from "@/features/deck/model/state";
 import ActorCard from "./ActorCard.vue";
 defineEmits<{ play: [id: string]; end: []; settle: [] }>();
 </script>
@@ -11,8 +14,23 @@ defineEmits<{ play: [id: string]; end: []; settle: [] }>();
       ><span>回合 {{ battleState.turn }}</span>
     </div>
     <h2>{{ battleState.enemy?.name ?? "等待下一场遭遇" }}</h2>
+    <p
+      v-if="
+        battleState.phase !== 'idle' &&
+        battleState.profession === deckState.profession
+      "
+      class="muted"
+    >
+      {{ professionNames[battleState.profession] }} ·
+      {{ professionResources[battleState.profession] }}
+      {{ battleState.resource.value }} ·
+      {{ professions[battleState.profession].resourceRule }}
+    </p>
     <div v-if="battleState.enemy" class="arena">
-      <ActorCard :actor="battleState.hero" name="余烬旅人" />
+      <ActorCard
+        :actor="battleState.hero"
+        :name="`余烬旅人 · ${professionNames[battleState.profession]}`"
+      />
       <div class="versus">
         VS<br /><small>{{ battleState.context?.region.toUpperCase() }}</small>
       </div>
@@ -30,6 +48,9 @@ defineEmits<{ play: [id: string]; end: []; settle: [] }>();
     <div v-if="battleState.phase === 'playing'">
       <div class="energy-line">
         <b>◉ {{ battleState.energy }} / 3 能量</b
+        ><b class="resource-chip"
+          >✦ {{ professionResources[battleState.profession] }}
+          {{ battleState.resource.value }}</b
         ><span
           >抽牌 {{ battleState.piles.draw.length }} · 弃牌
           {{ battleState.piles.discard.length }} · 消耗

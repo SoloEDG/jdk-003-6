@@ -4,8 +4,10 @@ import type {
   BattleResult,
   CardInstance,
   JourneyContext,
+  Profession,
 } from "@/shared/domain";
-import { cards } from "@/shared/cards";
+import { cards, cardUsableBy } from "@/shared/cards";
+import { baseHp, professions } from "@/shared/professions";
 import { uid } from "@/shared/random";
 import { spawnEnemy, enemyIntent, type Enemy } from "../lib/enemies";
 import { makePiles, drawCards, discardHand, type Piles } from "../lib/piles";
@@ -14,13 +16,18 @@ import {
   poisonTick,
   damage,
   type EffectEvent,
+  type BattleResource,
 } from "../lib/effects";
+
 interface BattleState {
   id: string;
   context: JourneyContext | null;
+  profession: Profession;
   hero: Actor;
   enemy: Enemy | null;
   piles: Piles;
+  /** 本场独有职业资源（决心 / 余火 / 标记）。 */
+  resource: BattleResource;
   energy: number;
   turn: number;
   phase: "idle" | "playing" | "won" | "lost";
@@ -28,9 +35,10 @@ interface BattleState {
   log: string[];
   result: BattleResult | null;
 }
-const emptyHero = (): Actor => ({
-  hp: 72,
-  maxHp: 72,
+
+const emptyHero = (maxHp = 72): Actor => ({
+  hp: maxHp,
+  maxHp,
   block: 0,
   strength: 0,
   poison: 0,
@@ -39,9 +47,11 @@ const emptyHero = (): Actor => ({
 const state = reactive<BattleState>({
   id: "",
   context: null,
-  hero: emptyHero(),
+  profession: "guardian",
+  hero: emptyHero(78),
   enemy: null,
   piles: makePiles([], ""),
+  resource: { value: 0 },
   energy: 3,
   turn: 1,
   phase: "idle",
@@ -50,23 +60,35 @@ const state = reactive<BattleState>({
   result: null,
 });
 export const battleState = readonly(state);
+
 export function beginBattle(
   context: JourneyContext,
   deck: CardInstance[],
   hp: number,
   maxHp: number,
+  profession: Profession = context.profession,
 ) {
   state.id = uid("battle");
   state.context = context;
-  state.hero = { ...emptyHero(), hp, maxHp };
+  state.profession = profession;
+  state.hero = {
+    ...emptyHero(maxHp || baseHp(profession)),
+    hp,
+    maxHp: maxHp || baseHp(profession),
+  };
   state.enemy = spawnEnemy(context);
-  state.piles = makePiles(deck, context.nodeId);
+  // 出战牌组重新核定：跨职业卡（含收藏中误入的旧牌）不得进入本场战斗。
+  const legal = deck.filter((c) => cardUsableBy(profession, c.key));
+  state.piles = makePiles(legal, context.nodeId);
+  state.resource = { value: 0 };
   state.energy = 3;
   state.turn = 1;
   state.phase = "playing";
   state.queue = [];
   state.result = null;
-  state.log = ["战斗开始。状态和牌堆仅属于本场遭遇。"];
+  state.log = [
+    `战斗开始 · ${professions[profession].name}。${professions[profession].resource}从 0 开始，不继承上一场。`,
+  ];
   drawCards(state.piles, 5, 1);
 }
 function finish() {
@@ -93,7 +115,15 @@ function drain() {
     } else if (event.effect.type === "energy") {
       state.energy += event.effect.amount;
     } else if (state.enemy)
-      state.log.unshift(resolveEffect(event, state.hero, state.enemy));
+      state.log.unshift(
+        resolveEffect(
+          event,
+          state.hero,
+          state.enemy,
+          state.profession,
+          state.resource,
+        ),
+      );
     finish();
   }
   state.log = state.log.slice(0, 18);
@@ -103,6 +133,10 @@ export function playCard(id: string) {
   const card = state.piles.hand.find((c) => c.id === id);
   if (!card) return false;
   const spec = cards[card.key]!;
+  if (!cardUsableBy(state.profession, card.key)) {
+    state.log.unshift(`跨职业卡 ${spec.name} 不能在本职业出战。`);
+    return false;
+  }
   if (state.energy < spec.cost) return false;
   state.energy -= spec.cost;
   state.piles.hand = state.piles.hand.filter((c) => c.id !== id);
@@ -113,7 +147,13 @@ export function playCard(id: string) {
     ...spec.effects.map((e) => ({
       effect: {
         ...e,
-        amount: e.amount + (card.upgraded && e.type !== "energy" ? 2 : 0),
+        amount:
+          e.amount +
+          (card.upgraded &&
+          e.type !== "energy" &&
+          e.type !== "spendResource"
+            ? 2
+            : 0),
       },
       source: "hero" as const,
       label: spec.name,
@@ -149,6 +189,9 @@ export function exportBattle() {
 }
 export function restoreBattle(d: BattleState) {
   Object.assign(state, d);
+  // 旧存档若缺少本场资源字段，恢复为空的职业资源，绝不沿用旧值。
+  if (!state.resource || typeof state.resource.value !== "number")
+    state.resource = { value: 0 };
 }
 export function resetBattle() {
   state.phase = "idle";
@@ -156,5 +199,6 @@ export function resetBattle() {
   state.enemy = null;
   state.result = null;
   state.piles = makePiles([], "");
+  state.resource = { value: 0 };
   state.log = [];
 }

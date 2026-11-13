@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { shopState, itemPrice } from "../model/state";
+import { shopState, itemPrice, visibleStock } from "../model/state";
 import { quoteMessage } from "../lib/pricing";
 import { cards } from "@/shared/cards";
+import { professionNames } from "@/shared/domain";
 defineProps<{ gold: number }>();
 defineEmits<{ buy: [id: string]; leave: [] }>();
 </script>
@@ -20,11 +21,18 @@ defineEmits<{ buy: [id: string]; leave: [] }>();
           )
         }}
       </p>
+      <p class="muted">
+        货架按 {{ professionNames[shopState.context!.profession] }}
+        过滤：只出售本职业与中立卡。
+      </p>
       <div class="stock">
-        <div v-for="item in shopState.stock" :key="item.id">
+        <div v-for="item in visibleStock()" :key="item.id">
           <div>
             <b>{{ cards[item.card]?.name }}</b
-            ><small>{{ cards[item.card]?.text }}</small>
+            ><small
+              >{{ cards[item.card]?.text }} ·
+              {{ cards[item.card]?.profession === "neutral" ? "中立" : professionNames[shopState.context!.profession] }}</small
+            >
           </div>
           <button
             :disabled="item.sold || gold < itemPrice(item.id)"

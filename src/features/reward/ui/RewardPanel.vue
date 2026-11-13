@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { rewardState, chooseReward } from "../model/state";
 import { cards } from "@/shared/cards";
+import { professionNames } from "@/shared/domain";
 defineEmits<{ claim: [skip: boolean] }>();
 </script>
 <template>
@@ -11,6 +12,9 @@ defineEmits<{ claim: [skip: boolean] }>();
     <h2>把胜利带进下一场</h2>
     <p class="muted">
       战斗结束后结算金币，并选择一张新牌。林地额外疗愈，险路改变奖励池。
+      奖励按
+      {{ rewardState.offer ? professionNames[rewardState.offer.profession] : "当前职业" }}
+      过滤，只会出现本职业与中立卡。
     </p>
     <div v-if="rewardState.offer && !rewardState.offer.claimed">
       <div class="notice">

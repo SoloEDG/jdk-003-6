@@ -6,17 +6,19 @@ export interface Enemy extends Actor {
   pattern: number[];
 }
 export function spawnEnemy(c: JourneyContext): Enemy {
-  const elite = c.kind === "elite";
+  const elite = c.kind === "elite" || c.kind === "trial";
   const boss = c.kind === "boss";
   const hp = (boss ? 80 : elite ? 40 : 25) + c.depth * 4 + c.influence.heat * 2;
   return {
     name: boss
       ? "裂隙守望者"
-      : c.region === "forest"
-        ? "孢冠巡游者"
-        : c.region === "forge"
-          ? "熔炉卫兵"
-          : "空洞回声",
+      : c.kind === "trial"
+        ? "试炼回响"
+        : c.region === "forest"
+          ? "孢冠巡游者"
+          : c.region === "forge"
+            ? "熔炉卫兵"
+            : "空洞回声",
     hp,
     maxHp: hp,
     block: 0,

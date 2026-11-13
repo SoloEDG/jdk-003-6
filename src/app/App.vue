@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { RouteMap, routeState } from "@/features/route";
 import { BattlePanel, battleState } from "@/features/battle";
 import { RewardPanel } from "@/features/reward";
 import { ShopPanel } from "@/features/shop";
 import { DeckPanel, deckState } from "@/features/deck";
-import { regionNames } from "@/shared/domain";
+import {
+  professionNames,
+  professionResources,
+  regionNames,
+  type Profession,
+} from "@/shared/domain";
+import { professionOrder, professions } from "@/shared/professions";
 import { session, switchTab } from "./session";
 import { load } from "./persistence";
 import * as commands from "./commands";
@@ -18,9 +24,59 @@ const tabs = [
   ["deck", "牌组", "05"],
 ];
 const progress = computed(() => (routeState.visited.length / 9) * 100);
+const switchCampOpen = computed(() => commands.switchCampOpen());
+const switchPreview = computed(() => deckState.switchPreview);
+const startChoice = ref<Profession>("guardian");
 </script>
 <template>
-  <div class="workspace">
+  <div v-if="!session.started" class="workspace start-screen">
+    <main class="start-main">
+      <div class="start-head">
+        <span class="eyebrow">A JOURNEY THROUGH THE ASHES</span>
+        <h1>余烬行旅<span> / 选择职业</span></h1>
+        <p class="muted">
+          三国职业拥有各自的初始牌组、可用卡类别与战斗资源。选择之后，
+          路线上的职业试炼只对同职业者开放。
+        </p>
+      </div>
+      <div class="profession-grid">
+        <button
+          v-for="key in professionOrder"
+          :key="key"
+          class="profession-card"
+          :class="{ selected: startChoice === key }"
+          :data-profession="key"
+          @click="startChoice = key"
+        >
+          <span class="eyebrow">{{ professionNames[key] }}</span>
+          <b>{{ professions[key].motto }}</b>
+          <ul class="profession-facts">
+            <li>
+              <span>战斗资源</span><em>{{ professions[key].resource }}</em>
+            </li>
+            <li>
+              <span>生命</span><em>{{ professions[key].maxHp }}</em>
+            </li>
+            <li>
+              <span>初始牌组</span><em>{{ professions[key].starter.length }} 张</em>
+            </li>
+          </ul>
+          <small>{{ professions[key].resourceRule }}</small>
+        </button>
+      </div>
+      <button
+        class="start-button"
+        data-action="start"
+        @click="commands.start(startChoice)"
+      >
+        以{{ professionNames[startChoice] }}的身份点燃火种 →
+      </button>
+      <p class="muted start-note">
+        跨职业卡可以收藏，但只有本职业与中立卡能进作出战牌组。
+      </p>
+    </main>
+  </div>
+  <div v-else class="workspace">
     <aside class="sidebar">
       <a class="brand" href="#"
         ><b>✺</b><span>EMBER<br /><strong>PATH</strong></span></a
@@ -44,6 +100,10 @@ const progress = computed(() => (routeState.visited.length / 9) * 100);
           {{
             session.context ? regionNames[session.context.region] : "苔光林地"
           }}
+        </p>
+        <p class="profession-line">
+          {{ professionNames[deckState.profession] }} ·
+          {{ professionResources[deckState.profession] }}
         </p>
         <div class="progress"><i :style="{ width: progress + '%' }"></i></div>
         <small>{{ routeState.visited.length }} / 9 段旅程</small>
@@ -74,7 +134,22 @@ const progress = computed(() => (routeState.visited.length / 9) * 100);
             <small>金币</small><b class="gold">{{ deckState.hero.gold }}</b>
           </div>
           <div>
-            <small>牌组</small><b>{{ deckState.cards.length }}</b>
+            <small>职业</small
+            ><b class="profession-value">{{
+              professionNames[deckState.profession]
+            }}</b>
+          </div>
+          <div>
+            <small>出战牌</small><b>{{ deckState.activeDeck.length }}</b>
+          </div>
+          <div>
+            <small>{{ professionResources[deckState.profession] }}</small
+            ><b class="resource-value">{{
+              battleState.phase !== "idle" &&
+              battleState.profession === deckState.profession
+                ? battleState.resource.value
+                : 0
+            }}</b>
           </div>
         </div>
       </header>
@@ -106,9 +181,15 @@ const progress = computed(() => (routeState.visited.length / 9) * 100);
             v-else
             :camp="session.context?.kind === 'camp' && !routeState.resolved"
             :locked="battleState.phase === 'playing'"
+            :switch-camp="switchCampOpen"
+            :preview="switchPreview"
             @upgrade="commands.upgrade"
             @remove="commands.remove"
             @camp="commands.camp"
+            @equip="commands.equip"
+            @unequip="commands.unequip"
+            @preview-switch="commands.previewProfession"
+            @switch="commands.switchProfession"
           />
         </div>
         <aside class="right-rail">
